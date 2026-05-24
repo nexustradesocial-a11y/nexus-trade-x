@@ -3,20 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Nexus Trade Bot API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: bot
+    description: Bot control and configuration
+  - name: activity
+    description: Bot activity logs
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +27,130 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /bot/status:
+    get:
+      operationId: getBotStatus
+      tags: [bot]
+      summary: Get bot running status and stats
+      responses:
+        "200":
+          description: Bot status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotStatus"
+
+  /bot/start:
+    post:
+      operationId: startBot
+      tags: [bot]
+      summary: Start the bot
+      responses:
+        "200":
+          description: Bot started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotStatus"
+
+  /bot/stop:
+    post:
+      operationId: stopBot
+      tags: [bot]
+      summary: Stop the bot
+      responses:
+        "200":
+          description: Bot stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotStatus"
+
+  /bot/config:
+    get:
+      operationId: getBotConfig
+      tags: [bot]
+      summary: Get bot configuration (keys are masked)
+      responses:
+        "200":
+          description: Bot config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotConfig"
+    put:
+      operationId: saveBotConfig
+      tags: [bot]
+      summary: Save bot configuration and API keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotConfigInput"
+      responses:
+        "200":
+          description: Config saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotConfig"
+
+  /bot/activity:
+    get:
+      operationId: getActivity
+      tags: [activity]
+      summary: Get recent bot activity (posts and replies)
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [post, reply, influencer_reply]
+      responses:
+        "200":
+          description: Activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityLog"
+
+  /bot/stats:
+    get:
+      operationId: getBotStats
+      tags: [bot]
+      summary: Get bot statistics summary
+      responses:
+        "200":
+          description: Bot stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotStats"
+
+  /bot/memory:
+    get:
+      operationId: getBotMemory
+      tags: [bot]
+      summary: Get conversation memory entries
+      responses:
+        "200":
+          description: Memory entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemoryEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +161,99 @@ components:
       required:
         - status
 
+    BotStatus:
+      type: object
+      required: [running, uptime, startedAt]
+      properties:
+        running:
+          type: boolean
+        uptime:
+          type: ["integer", "null"]
+          description: Seconds since bot started
+        startedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    BotConfig:
+      type: object
+      required: [hasXApiKey, hasXApiSecret, hasXAccessToken, hasXAccessSecret, hasOpenAiKey, hasXaiKey, isConfigured]
+      properties:
+        hasXApiKey:
+          type: boolean
+        hasXApiSecret:
+          type: boolean
+        hasXAccessToken:
+          type: boolean
+        hasXAccessSecret:
+          type: boolean
+        hasOpenAiKey:
+          type: boolean
+        hasXaiKey:
+          type: boolean
+        isConfigured:
+          type: boolean
+
+    BotConfigInput:
+      type: object
+      properties:
+        xApiKey:
+          type: string
+        xApiSecret:
+          type: string
+        xAccessToken:
+          type: string
+        xAccessSecret:
+          type: string
+        openAiKey:
+          type: string
+        xaiKey:
+          type: string
+
+    ActivityLog:
+      type: object
+      required: [id, type, content, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [post, reply, influencer_reply]
+        content:
+          type: string
+        targetUser:
+          type: ["string", "null"]
+        tweetId:
+          type: ["string", "null"]
+        success:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    BotStats:
+      type: object
+      required: [totalPosts, totalReplies, totalInfluencerReplies, last24hPosts, last24hReplies]
+      properties:
+        totalPosts:
+          type: integer
+        totalReplies:
+          type: integer
+        totalInfluencerReplies:
+          type: integer
+        last24hPosts:
+          type: integer
+        last24hReplies:
+          type: integer
+
+    MemoryEntry:
+      type: object
+      required: [id, user, question, answer]
+      properties:
+        id:
+          type: integer
+        user:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
