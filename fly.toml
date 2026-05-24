@@ -1,0 +1,14 @@
+app = "nexus-ai-bot"
+primary_region = "ord"
+
+[build]
+
+[processes]
+  app = "python nexus_ai_bot.py"
+
+[env]
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
